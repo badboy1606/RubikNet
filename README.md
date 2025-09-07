@@ -32,7 +32,7 @@ This folder is designed as a **introduction** on deep learning.
 ## [Cube Solver](https://github.com/Archaive16/RubikNet/tree/main/cube_solver)
 This folder contains the **solver logic** for the Rubik’s Cube. 
 - Implemented **ADI(Autodidactic Iteration)** or Self Supervised Learning for cube solving.
-- Includes **BFS/MCTS-based solvers** and classical search approaches.  
+- Includes **Beam Search/ A-star -based solvers** and classical search approaches.  
 - Can be used standalone to find solutions to scrambled states.  
 
 
@@ -43,6 +43,9 @@ We recommend using [uv](https://docs.astral.sh/uv/) for environment management.
 To set up the project:  
 
 ```bash
+# clone the repository
+git clone https://github.com/Archaive16/RubikNet
+
 # Install uv (if not already installed)
 pip install uv
 
@@ -52,14 +55,14 @@ uv sync
 
 ## Connect with us
 
-
 #### Arhan Chavare  
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Archaive16)  
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/arhan-chavare-5a23a8334/)  
-
-### Rigvedi Borchate  
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Archaive16)
+#### Rigvedi Borchate  
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rigvedi-3301)  
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/rigvedi-borchate-50b210330/)  
+ 
+# Achnoledgements
+- [SRA VJTI](http://sra.vjti.info/),  Eklavya 2025
+- Special thanks to our mentors, [Rakshitha](https://github.com/RakshithaKowlikar) and [Prithvi](https://github.com/rkt-1597).
 
 
 
