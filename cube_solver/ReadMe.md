@@ -27,19 +27,6 @@ This project implements a system capable of solving Rubik's Cube puzzles using d
 └── state_capture.py       # Computer vision for cube scanning
 ```
 
-## Installation
-
-### Setup
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd RubikNet
-
-# Install required packages
-pip install torch torchvision numpy pandas matplotlib seaborn opencv-python pyserial
-```
-
 ## Usage
 
 ### 1. Training the Neural Network
@@ -47,7 +34,7 @@ pip install torch torchvision numpy pandas matplotlib seaborn opencv-python pyse
 Generate training data and train the ADI model:
 
 ```python
-python adi.py
+uv run adi.py
 ```
 
 Configuration parameters in `adi.py`:
@@ -65,7 +52,7 @@ The system automatically detects and uses CUDA if available. For CPU-only traini
 Run comprehensive performance analysis:
 
 ```python
-python adi_standalone.py
+uv run adi_standalone.py
 ```
 
 This will:
@@ -129,7 +116,7 @@ The system will:
 Use the main script for end-to-end cube solving:
 
 ```python
-python main.py
+uv run main.py
 ```
 
 This integrates:
@@ -142,7 +129,7 @@ This integrates:
 Run comparative analysis between different solving approaches:
 
 ```python
-python analysis.py
+uv run analysis.py
 ```
 
 This benchmarks A* vs Beam Search across various scramble depths and generates performance plots.
