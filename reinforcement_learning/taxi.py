@@ -1,67 +1,65 @@
-import numpy as np
-import gymnasium as gym
-from collections import defaultdict
+import numpy as np  # For numerical operations and arrays
+import gymnasium as gym  # OpenAI Gym for RL environments
+import matplotlib.pyplot as plt  # For visualization
 
-# 1. monte carlo fn --> generate episode --> pick action 
-# 2. calculate win rate
+env = gym.make("Taxi-v3", render_mode="rgb_array")  # Create Taxi environment with RGB rendering
 
-env = gym.make("Blackjack-v1", sab=True)
+def q_learning(Q, alpha, gamma, epsilon, min_epsilon, decay, num_episodes):  # Main Q-learning training loop
+    print("Training...")
+    actions = np.arange(0, env.action_space.n)  # Array of all possible actions
+    i = 0
+    success = 0  # Counter for successful taxi rides
+    for i in range(num_episodes + 1):  # Training loop for specified episodes
+        if i % 1000 == 0:  # Print progress every 1000 episodes
+            print(f"Episode {i} / {num_episodes} | Epsilon: {epsilon:.5f} | Success (in last 1000 eps) = {success}")    # printing progress
+            success = 0  # Reset success counter
+        state, _ = env.reset()  # Reset environment to initial state
+        completed = 0  # Episode completion flag
+        while not completed:  # Continue until episode ends
+            action = take_action(actions, Q, epsilon, state)    # take action
+            next_state, reward, terminated, truncated, _ = env.step(action)    # generate next state, reward and status\
+            completed = terminated or truncated  # Check if episode is done
+            if reward == 20:  # Successful passenger delivery reward
+                success += 1  # Increment success counter
+            # bellman equation
+            Q[state, action] += alpha * (reward + gamma * np.max(Q[next_state]) - Q[state, action])  # Update Q-value using Bellman equation
+            state = next_state  # Move to next state
+            epsilon = epsilon_decay(epsilon, min_epsilon, decay)    # decay epsilon after every Q update (every step)
+    return Q  # Return trained Q-table
 
-def monte_carlo(n_episodes, epsilon, alpha, gamma, Q):
-    for i in range(n_episodes):
-        episode = generate_ep(Q, epsilon)    # output = tuple(states, actions, rewards)
-        states, actions, rewards = zip(*episode)
-        epsilon *= 0.99995    # decay epsilon
-        n = 0
-        for state in states:
-            discounted_return = 0
-            k = np.arange(len(rewards[n:]))
-            for j in range(len(rewards[n:])):
-                discounted_return += rewards[n + j] * (gamma**k[j])    # discounted return = R(t) + gamma * R(t+1) + ...
-            Q[state][actions[n]] += alpha * (discounted_return - Q[state][actions[n]])    # bellman equation
-            n += 1
-    return Q
+def epsilon_decay(epsilon, min_epsilon, decay):  # Decay exploration rate over time
+    if epsilon > min_epsilon:  # Only decay if above minimum
+        epsilon = epsilon * decay  # Apply decay factor
+    return epsilon  # Return updated epsilon
 
-def generate_ep(Q, epsilon):
-    state, _ = env.reset()
-    episode = []
+# function to take action using epsilon-greedy mechanism
+def take_action(actions, Q, epsilon, state):  # Choose action using epsilon-greedy policy
+    if np.random.rand() > epsilon:  # Exploit: choose best known action
+        action = np.argmax(Q[state])  # Select action with highest Q-value
+    else:  # Explore: choose random action
+        action = np.random.randint(0, len(actions))  # Random action selection
+    return action  # Return chosen action
 
-    completed = 0
-    while not completed:
-        action = generate_action(Q, epsilon, state)
-        next_state, reward, terminated, truncated, _ = env.step(action)
-        completed = terminated or truncated
-        episode.append((state, action, reward))
-        state = next_state
-    
-    return episode
+# evaluating final learnt Q for 1 episode
+def evaluate(Q):  # Test trained agent performance
+    print("Evaluating...")
+    #plt.ion()
+    state, _ = env.reset()  # Reset environment for evaluation
+    total_reward = 0  # Track cumulative reward
+    completed = 0  # Episode completion flag
+    while not completed:  # Continue until episode ends
+        action = np.argmax(Q[state])    # take action
+        next_state, reward, terminated, truncated, _ = env.step(action)    # generate next state, reward and status
+        total_reward += reward  # Accumulate rewards
+        completed = terminated or truncated  # Check completion status
+        state = next_state  # Move to next state
+        frame = env.render()    # storing the frame
+        plt.imshow(frame)  # Display current frame
+        plt.axis("off")  # Hide plot axes
+        plt.pause(1)    # pausing for a small time to show continuous frames
+    return total_reward  # Return total episode reward
 
-def generate_action(Q, epsilon, state):
-    action_space = [0, 1]
-    probabilities = [1 - epsilon / 2, epsilon / 2] if np.argmax(Q[state]) == 0 else [epsilon / 2, 1 - epsilon / 2]
-    action = np.random.choice(action_space, p = probabilities)
-    return action
+Q = np.zeros((500, 6))  # Initialize Q-table with zeros (500 states, 6 actions)
+Q = q_learning(Q, 0.1, 0.9999, 1.0, 0.05, 0.9995, 10000)  # Train agent with Q-learning
 
-def get_win_rate(Q, n_episodes):
-    # win rate = num(total reward > 0) / total episodes
-    episodes_won = 0
-    for _ in range(n_episodes):
-        total_reward = 0
-        completed = 0
-        while not completed:
-            state, _ = env.reset()
-            action = np.argmax(Q[state]) if state in Q else np.random.choice([0, 1])
-            next_state, reward, terminated, truncated, _ = env.step(action)
-            completed = terminated or truncated
-            total_reward += reward
-            state = next_state
-        if total_reward > 0:
-            episodes_won += 1
-    return (episodes_won / n_episodes) * 100
-
-Q = defaultdict(lambda: np.zeros(2))
-print("Training...")
-Q = monte_carlo(100000, 1.0, 0.4, 0.99999, Q)    # n, epsilon, alpha, gamma, q
-
-print("Calculating...")
-print(f"Win Rate: {get_win_rate(Q, 10000)}")    # q, n 
+print(f"Final Episode Reward: {evaluate(Q)}")  # Evaluate and display final performance

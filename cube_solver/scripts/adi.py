@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from cube import Cube, encode_cube_state, decode_cube_state
 from dataset import generate_dataset
 
-# Set device
+# Select GPU if available, otherwise CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Device available: {device}")
 
@@ -20,20 +20,22 @@ class ADI(nn.Module):
     def __init__(self):
         super().__init__()
 
+        # Shared fully-connected layers
         self.fc1 = nn.Linear(324, 4096)
         self.fc2 = nn.Linear(4096, 2048)
 
-        # Policy Head
+        # Policy Head (predict best move)
         self.fc3_1 = nn.Linear(2048, 512)
         self.fc_policy_out = nn.Linear(512, 12)
 
-        # Value Head
+        # Value Head (predict closeness to solved)
         self.fc3_2 = nn.Linear(2048, 512)
         self.fc_value_out = nn.Linear(512, 1)
 
         self.apply_glorot_init()
 
     def apply_glorot_init(self):
+        # Xavier initialization for stable training
         for module in self.modules():
             if isinstance(module, nn.Linear):
                 nn.init.xavier_normal_(module.weight, gain=0.5)
@@ -41,30 +43,30 @@ class ADI(nn.Module):
                     nn.init.zeros_(module.bias)
 
     def forward(self, x):
+        # Forward pass through shared layers
         x = F.elu(self.fc1(x))
         x = F.elu(self.fc2(x))
 
-        # Policy Path
+        # Policy path
         policy_logits = F.elu(self.fc3_1(x))
         policy_logits = self.fc_policy_out(policy_logits)
 
-        # Value Path
+        # Value path
         value = F.elu(self.fc3_2(x))
-        value = torch.tanh(self.fc_value_out(value))
+        value = torch.tanh(self.fc_value_out(value))  # Output in [-1, 1]
 
         return policy_logits, value
 
 
 def targets(states, pred_vals, device='cpu'):
-    # Calculate target policy and value for training for a Base state using the Child states
-    
+    # Compute target policy (best child) and value using predicted child values
     action_vals = []
 
     with torch.no_grad():
         for i, state in enumerate(states):
             cube = Cube(state)
-            reward = cube.get_reward()
-            # Handle tensor on any device
+            reward = cube.get_reward()  # Immediate reward for this child
+            # Handle predictions on any device
             if isinstance(pred_vals[i], torch.Tensor):
                 pred_val = torch.clamp(pred_vals[i].squeeze(), -1, 1).item()
             else:
@@ -73,9 +75,11 @@ def targets(states, pred_vals, device='cpu'):
             action_val = reward + pred_val
             action_vals.append(action_val)
 
+        # Choose child with highest action value
         max_i = np.argmax(action_vals)
         target_val = action_vals[max_i]
 
+        # Squash value to [-1, 1] range
         target_val = np.tanh(target_val)
 
         target_policy_i = torch.tensor(max_i, dtype=torch.long, device=device)
@@ -85,13 +89,12 @@ def targets(states, pred_vals, device='cpu'):
 
 
 def prepare_dataloader(df, batch_size, shuffle=True):
-    # Prepare DataLoader from DataFrame.
-    
+    # Convert DataFrame into batched tensors for training
     child_encoded = df['child_state'].apply(encode_cube_state)
     child_encoded = np.array(child_encoded.tolist())
     children = torch.FloatTensor(child_encoded)
 
-    base_states = df['base_state'].values[::12]
+    base_states = df['base_state'].values[::12]  # One base for every 12 children
     base_encoded = [encode_cube_state(state) for state in base_states]
     bases = torch.FloatTensor(np.array(base_encoded))
 
@@ -107,9 +110,10 @@ def prepare_dataloader(df, batch_size, shuffle=True):
 
 
 def train_adi(num_epochs, batch_size, batch_iterations=1, scramble_depth=5, scramble_runs_per_epoch=50):
-    # Train the final adi model
+    # Main training loop for ADI model
     model = ADI().to(device)
 
+    # Separate parameters for different learning rates
     policy_params = list(model.fc3_1.parameters()) + list(model.fc_policy_out.parameters())
     value_params = list(model.fc3_2.parameters()) + list(model.fc_value_out.parameters())
     shared_params = list(model.fc1.parameters()) + list(model.fc2.parameters())
@@ -131,11 +135,9 @@ def train_adi(num_epochs, batch_size, batch_iterations=1, scramble_depth=5, scra
     for epoch in range(num_epochs):
         print(f"\nEPOCH {epoch + 1}/{num_epochs}")
 
-        print("Generating new dataset...")
+        # Generate new dataset for each epoch (on-the-fly training)
         generate_dataset(scramble_depth, scramble_runs_per_epoch, f"cube_dataset_epoch_{epoch+1}.csv")
-
         df = pd.read_csv(f"cube_dataset_epoch_{epoch+1}.csv")
-
         dataloader = prepare_dataloader(df, batch_size, shuffle=True)
 
         print(f"Dataset loaded. DataLoader created with {len(dataloader)} batches.")
@@ -148,7 +150,7 @@ def train_adi(num_epochs, batch_size, batch_iterations=1, scramble_depth=5, scra
 
             batch_bases, batch_children, batch_scramble_steps = batch_data
 
-            # Move batch data to device
+            # Move batch to correct device
             batch_bases = batch_bases.to(device)
             batch_children = batch_children.to(device)
             batch_scramble_steps = batch_scramble_steps.to(device)
@@ -156,7 +158,7 @@ def train_adi(num_epochs, batch_size, batch_iterations=1, scramble_depth=5, scra
             for iteration in range(batch_iterations):
                 print(f"  ITERATION {iteration + 1}/{batch_iterations}")
 
-                # Shuffle indices
+                # Shuffle data to avoid learning order bias
                 shuffle_indices = torch.randperm(len(batch_bases))
                 batch_bases = batch_bases[shuffle_indices]
                 batch_children = batch_children[shuffle_indices]
@@ -167,14 +169,17 @@ def train_adi(num_epochs, batch_size, batch_iterations=1, scramble_depth=5, scra
                 total_policy_loss = 0
                 total_value_loss = 0
 
+                # Process each base state individually
                 for base_i in range(len(batch_bases)):
-                    base = batch_bases[base_i]  # Already on device
-                    children_i = batch_children[base_i]  # Already on device
+                    base = batch_bases[base_i]
+                    children_i = batch_children[base_i]
                     depth = batch_scramble_steps[base_i].item()
 
                     with torch.no_grad():
+                        # Weight based on scramble depth
                         W = 1 / max(depth, 1.0)
 
+                        # Predict values for child states
                         child_predicted_values = []
                         for child in children_i:
                             _, child_pred_val = model.forward(child.unsqueeze(0))
@@ -182,9 +187,10 @@ def train_adi(num_epochs, batch_size, batch_iterations=1, scramble_depth=5, scra
 
                         child_predicted_values_t = torch.stack(child_predicted_values)
 
-                        # Decode children (automatically handles GPU tensors)
+                        # Decode children for target calculation
                         children_decoded = [decode_cube_state(child) for child in children_i]
 
+                        # Get target policy and value
                         target_policy_i, target_value = targets(children_decoded, child_predicted_values_t, device=device)
 
                     # Forward pass for base state
@@ -192,30 +198,30 @@ def train_adi(num_epochs, batch_size, batch_iterations=1, scramble_depth=5, scra
                     predicted_policy = predicted_policy.squeeze(0)
                     predicted_value = predicted_value.squeeze()
 
-                    # Calculate losses
+                    # Compute losses
                     loss_policy = criterion_policy(predicted_policy.unsqueeze(0), target_policy_i.unsqueeze(0))
                     loss_val = criterion_val(predicted_value.unsqueeze(0), target_value)
 
-                    # Apply weighting
+                    # Apply depth weighting
                     weighted_policy_loss = W * loss_policy
                     weighted_value_loss = W * loss_val
 
                     total_policy_loss += weighted_policy_loss
                     total_value_loss += weighted_value_loss
 
-                # Average losses
+                # Average losses across batch
                 avg_policy_loss = total_policy_loss / len(batch_bases)
                 avg_value_loss = total_value_loss / len(batch_bases)
                 avg_total_loss = avg_policy_loss + avg_value_loss
 
-                # Backward pass
+                # Backpropagation
                 avg_total_loss.backward()
 
-                # Gradient clipping
+                # Gradient clipping to stabilize training
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
                 optimizer.step()
 
-                # Record losses
+                # Record losses for plotting
                 epoch_loss += avg_total_loss.item()
                 batch_losses.append(avg_total_loss.item())
                 policy_losses.append(avg_policy_loss.item())
@@ -224,24 +230,24 @@ def train_adi(num_epochs, batch_size, batch_iterations=1, scramble_depth=5, scra
 
                 print(f"    Loss: {avg_total_loss.item():.6f} (Policy: {avg_policy_loss.item():.6f}, Value: {avg_value_loss.item():.6f})")
 
-        # Calculate average epoch loss
+        # Log epoch loss
         avg_epoch_loss = epoch_loss / total_iterations
         epoch_losses.append(avg_epoch_loss)
         print(f"\nEpoch {epoch + 1} completed. Average loss: {avg_epoch_loss:.6f}")
 
-        # Clear cache periodically to prevent memory issues
+        # Free GPU memory
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
+        # Save model after each epoch
         torch.save(model.state_dict(), 'deepcube_adi_model.pth')
         print(f"\nModel saved as 'deepcube_adi_model.pth'")
-
 
     return model, batch_losses, epoch_losses, policy_losses, val_losses
 
 
 def plot_training_results(batch_losses, epoch_losses, policy_losses, val_losses):
-    # Plot batch losses
+    # Plot training curves for loss monitoring
     plt.figure(figsize=(12, 10))
 
     plt.subplot(2, 2, 1)
@@ -277,8 +283,7 @@ def plot_training_results(batch_losses, epoch_losses, policy_losses, val_losses)
 
 
 def test_model(model_path='deepcube_adi_model.pth', num_tests=10, scramble_depth=5):
-    # Test the trained model on scrambled cubes.
-    
+    # Evaluate trained model on random scrambled cubes
     model = ADI().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
@@ -292,11 +297,11 @@ def test_model(model_path='deepcube_adi_model.pth', num_tests=10, scramble_depth
         print(f"\nTest {test_i + 1}:")
         print(f"Scramble moves: {cube.move_history}")
 
-        # Encode state
+        # Encode current state
         state_encoded = encode_cube_state(''.join(cube.state))
         state_tensor = torch.FloatTensor(state_encoded).unsqueeze(0).to(device)
 
-        # Get model predictions
+        # Get model outputs
         with torch.no_grad():
             policy_logits, value = model(state_tensor)
             policy_probs = F.softmax(policy_logits, dim=-1)
@@ -309,7 +314,7 @@ def test_model(model_path='deepcube_adi_model.pth', num_tests=10, scramble_depth
 
 
 if __name__ == "__main__":
-    # TRAINING PARAMETERS
+    # Main entry point for training
     NUM_EPOCHS = 75
     BATCH_SIZE = 64
     BATCH_ITERATIONS = 10
@@ -325,7 +330,7 @@ if __name__ == "__main__":
     print(f"  - Scramble Depth: {SCRAMBLE_DEPTH}")
     print(f"  - Scramble Runs per Epoch: {SCRAMBLE_RUNS_PER_EPOCH}")
 
-    # Train the model
+    # Train model and plot results
     model, batch_losses, epoch_losses, policy_losses, val_losses = train_adi(
         num_epochs=NUM_EPOCHS,
         batch_size=BATCH_SIZE,
@@ -337,8 +342,8 @@ if __name__ == "__main__":
     print("\nTraining completed!")
     print(f"Final epoch loss: {epoch_losses[-1]:.6f}")
 
-    # Plot results
+    # Plot loss curves
     plot_training_results(batch_losses, epoch_losses, policy_losses, val_losses)
 
-    # Optional: Test the model
+    # Optionally test the model after training
     # test_model('deepcube_adi_model.pth', num_tests=5, scramble_depth=5)

@@ -17,7 +17,6 @@ void step_motor(gpio_num_t step_pin, gpio_num_t dir_pin, int clockwise) {
     }
 }
 
-
 void rotate_R(int clockwise) {
    
     step_motor(GPIO_NUM_19, GPIO_NUM_21, clockwise);

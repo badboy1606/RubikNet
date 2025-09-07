@@ -7,10 +7,12 @@ from cube import Cube
 
 class AStar:
     def __init__(self, model_path="deepcube_adi_model.pth", device="cpu"):
+        # Load the trained ADI model for cube solving
         self.model = ADI()
         self.model.load_state_dict(torch.load(model_path, map_location=device))
         self.model.eval()
 
+        # One-hot encoding for cube face colors
         self.color_map = {
             'w': [1, 0, 0, 0, 0, 0],
             'y': [0, 1, 0, 0, 0, 0],
@@ -21,6 +23,7 @@ class AStar:
         }
 
     def get_cube_child_states(self, cube):
+        # Generate all possible next states from current cube state
         children = []
         original_state = cube.state.copy()
 
@@ -32,12 +35,14 @@ class AStar:
         return children
 
     def encode_cube_state(self, state_str):
+        # Convert cube state (string) to one-hot encoded vector
         encoded = []
         for color in state_str:
             encoded.extend(self.color_map[color])
         return encoded
 
     def decode_cube_state(self, encoded_state):
+        # Convert one-hot encoded vector back to cube color list
         color_list = ['w', 'y', 'b', 'g', 'r', 'o']
         decoded = []
 
@@ -51,9 +56,11 @@ class AStar:
         return decoded
 
     def _state_key_from_list(self, state_list):
+        # Convert cube state list to a unique string key
         return ''.join(state_list)
 
     def _to_state_list(self, state):
+        # Ensure state is returned as a list of 54 color characters
         if isinstance(state, list) and len(state) == 54 and all(isinstance(x, str) for x in state):
             return state
         if isinstance(state, torch.Tensor):
@@ -63,11 +70,13 @@ class AStar:
         return list(state)
 
     def _inverse_move(self, m):
+        # Return inverse of a cube move (e.g., R -> R')
         if isinstance(m, str):
             return m[:-1] if m.endswith("'") else m + "'"
         return m
 
     def _tensor_from_state_list(self, state_list):
+        # Convert state list to a PyTorch tensor for model input
         enc = self.encode_cube_state(''.join(state_list))
         return torch.FloatTensor(enc).unsqueeze(0)
 
@@ -83,6 +92,7 @@ class AStar:
             return 0.0
 
     def count_misplaced_pieces(self, state_list):
+        # Count number of stickers that do not match their face center color
         if len(state_list) != 54:
             return 54
 
@@ -96,17 +106,18 @@ class AStar:
         return misplaced
 
     def a_star_search(self, start_state, max_nodes=50000, max_depth=25):
+        # Perform A* search to find solution moves from start_state
         start_list = self._to_state_list(start_state)
         start_cube = Cube(state=start_list)
 
         if start_cube.is_solved():
             return [], True
 
-        open_set = []
+        open_set = []  # Priority queue for A* nodes
         start_key = self._state_key_from_list(start_list)
 
-        g_score = 0
-        h_score = -self.get_model_value(start_list)
+        g_score = 0  # Cost from start node
+        h_score = -self.get_model_value(start_list)  # Heuristic (model value)
         f_score = g_score + h_score
 
         heapq.heappush(open_set, (f_score, g_score, start_key, start_list, []))
@@ -119,9 +130,11 @@ class AStar:
         while open_set and nodes_expanded < max_nodes:
             current_f, current_g, current_key, current_state, current_path = heapq.heappop(open_set)
 
+            # Skip if this path is worse than previously known
             if current_key in best_g_score and current_g > best_g_score[current_key]:
                 continue
 
+            # Depth limit check
             if current_g >= max_depth:
                 continue
 
@@ -140,6 +153,7 @@ class AStar:
 
                 move = moves[idx] if idx < len(moves) else idx
 
+                # Avoid immediately undoing previous move
                 if (len(current_path) > 0 and isinstance(move, str) and
                         isinstance(current_path[-1], str) and self._inverse_move(move) == current_path[-1]):
                     continue
@@ -147,6 +161,7 @@ class AStar:
                 child_key = self._state_key_from_list(child_state)
                 tentative_g = current_g + 1
 
+                # Skip if a better path to this state already exists
                 if child_key in best_g_score and tentative_g >= best_g_score[child_key]:
                     continue
 
@@ -158,6 +173,7 @@ class AStar:
                 model_val = self.get_model_value(child_state)
                 misplaced = self.count_misplaced_pieces(child_state)
 
+                # Heuristic combines model prediction and misplaced pieces
                 h_score = -model_val + 0.1 * misplaced
                 f_score = tentative_g + h_score
 
@@ -166,7 +182,3 @@ class AStar:
 
         print(f"Search terminated. Nodes expanded: {nodes_expanded}")
         return [], False
-
-
-
-    

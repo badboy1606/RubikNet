@@ -55,5 +55,3 @@ for move in moves:
     time.sleep(1)
 
 ser.close()
-
-

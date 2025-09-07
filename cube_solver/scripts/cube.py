@@ -13,7 +13,7 @@ color_map = {
 }
 
 def find_action_index(parent_state, child_state):
-    
+    # Find which move transforms parent_state into child_state
     test_cube = Cube(state=parent_state.copy())  
     for i, move in enumerate(test_cube.moves):
         new_cube = Cube(state=parent_state.copy())  
@@ -22,13 +22,11 @@ def find_action_index(parent_state, child_state):
         if new_cube.state == child_state:
             return i , move 
 
-    return -1  
-
+    return -1   # Return -1 if no move produces the child state
 
 
 def encode_cube_state(state_str):
-    # Encode a cube state string into a one-hot encoded vector.
-    
+    # Convert cube state string into one-hot encoded vector
     encoded = []
     for color in state_str:
         encoded.extend(color_map[color])
@@ -36,12 +34,11 @@ def encode_cube_state(state_str):
 
 
 def decode_cube_state(encoded_state):
-    # Decode a one-hot encoded state back to color representation.
-    
+    # Convert one-hot vector back to cube state string
     color_list = ['w', 'y', 'b', 'g', 'r', 'o']
     decoded = []
 
-    # Handle both CPU and CUDA tensors
+    # Ensure tensor is converted to numpy
     if isinstance(encoded_state, torch.Tensor):
         encoded_state = encoded_state.cpu().detach().numpy()
 
@@ -51,22 +48,24 @@ def decode_cube_state(encoded_state):
         decoded.append(color_list[color_i])
     return decoded
 
-# Cube Model
 
+# Cube model representing state and operations
 class Cube:
     def __init__(self, state=None):
-        self.reset_cube()
-        self.move_history = []
-        self.scramble_states = []
+        self.reset_cube()  # Initialize solved cube
+        self.move_history = []  # Track applied moves
+        self.scramble_states = []  # Store states during scrambling
         self.moves = ["U", "D", "F", "B", "R", "L", "U'", "D'", "F'", "B'", "R'", "L'"]
         if state is not None:
             self.state = state.copy()
 
     def reset_cube(self):
+        # Reset cube to solved state
         self.state = ["w"]*9 + ["y"]*9 + ["b"]*9 + ["g"]*9 + ["r"]*9 + ["o"]*9
         self.history = []
 
     def is_solved(self):
+        # Check if all faces have uniform color
         if self.state is None:
             return False
         for i in range(0, 54, 9):
@@ -75,6 +74,7 @@ class Cube:
         return True
 
     def scramble(self, n):
+        # Apply n random moves to scramble the cube
         moves = self.moves
         self.scramble_states = []
         self.move_history = []
@@ -88,10 +88,12 @@ class Cube:
             })
 
     def move(self, move_name):
+        # Apply a move and update state
         self.move_history.append(move_name)
         self.state = self.switch(move_name, self.state)
 
     def print_cube(self):
+        # Print cube faces for debugging
         print("F:", self.state[0:9])
         print("B:", self.state[9:18])
         print("U:", self.state[18:27])
@@ -100,17 +102,22 @@ class Cube:
         print("L:", self.state[45:54])
 
     def get_reward(self):
+        # Return +1 if solved, -1 otherwise (for RL)
         return 1 if self.is_solved() else -1
 
     def switch(self, move, cube):
+        # Apply face rotations and side swaps for a given move
         cube = cube.copy()
 
         def rotate_face(c, a,b,c_,d,e,f,g,h):
+            # Clockwise rotation of a face
             c[a],c[b],c[c_],c[d],c[e],c[f],c[g],c[h] = c[c_],c[e],c[h],c[b],c[g],c[a],c[d],c[f]
 
         def rotate_face_anti(c, a,b,c_,d,e,f,g,h):
+            # Counterclockwise rotation of a face
             c[a],c[b],c[c_],c[d],c[e],c[f],c[g],c[h] = c[f],c[d],c[a],c[g],c[b],c[h],c[e],c[c_]
 
+        # Handle all 12 possible moves
         if move == "F":
             rotate_face_anti(cube, 0,1,2,3,5,6,7,8)
             cube[24],cube[25],cube[26],cube[36],cube[39],cube[42],cube[33],cube[34],cube[35],cube[53],cube[50],cube[47] = \
@@ -177,6 +184,7 @@ class Cube:
         return cube
 
     def get_child_states_at_all_steps(self):
+        # Generate child states for every scramble step
         all_children = []
         for scramble_state in self.scramble_states:
             base_state = scramble_state["state"]
@@ -187,4 +195,3 @@ class Cube:
                 children.append(new_cube)
             all_children.append(children)
         return all_children
-

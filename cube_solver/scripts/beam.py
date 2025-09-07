@@ -6,10 +6,12 @@ from cube import Cube
 
 class BeamSearch:
     def __init__(self, model_path="deepcube_adi_model.pth", device="cpu"):
+        # Load ADI model for state value estimation
         self.model = ADI()
         self.model.load_state_dict(torch.load(model_path, map_location=device))
         self.model.eval()
 
+        # One-hot color encoding for cube state
         self.color_map = {
             'w': [1, 0, 0, 0, 0, 0],
             'y': [0, 1, 0, 0, 0, 0],
@@ -21,6 +23,7 @@ class BeamSearch:
 
     # ---------- state helpers ----------
     def get_cube_child_states(self, cube):
+        # Generate all child states by applying every move once
         children = []
         original_state = cube.state.copy()
         for move in cube.moves:
@@ -30,12 +33,14 @@ class BeamSearch:
         return children
 
     def encode_cube_state(self, state_str):
+        # Convert cube state to one-hot encoded vector
         encoded = []
         for color in state_str:
             encoded.extend(self.color_map[color])
         return encoded
 
     def decode_cube_state(self, encoded_state):
+        # Convert one-hot encoding back to cube state list
         color_list = ['w', 'y', 'b', 'g', 'r', 'o']
         decoded = []
 
@@ -49,9 +54,11 @@ class BeamSearch:
         return decoded
 
     def _state_key_from_list(self, state_list):
+        # Make string key from state list (used for seen set)
         return ''.join(state_list)
 
     def _to_state_list(self, state):
+        # Normalize state format to list of 54 color chars
         if isinstance(state, list) and len(state) == 54 and all(isinstance(x, str) for x in state):
             return state
         if isinstance(state, torch.Tensor):
@@ -61,10 +68,12 @@ class BeamSearch:
         return list(state)
 
     def _inverse_move(self, m):
+        # Return inverse of a given move
         return m[:-1] if m.endswith("'") else m + "'"
 
     # ---------- scoring ----------
     def _heuristic_by_centers(self, state_list):
+        # Heuristic: count stickers matching center color on each face
         if not isinstance(state_list, list) or len(state_list) != 54:
             return 0.0
         score = 0
@@ -76,6 +85,7 @@ class BeamSearch:
         return float(score)
 
     def _model_value_score(self, state_tensor):
+        # Get predicted value from ADI model for given state
         try:
             with torch.no_grad():
                 _, value = self.model(state_tensor)
@@ -85,6 +95,7 @@ class BeamSearch:
             return None
 
     def _tensor_from_state_list(self, state_list):
+        # Convert state list to model input tensor
         enc = self.encode_cube_state(''.join(state_list))
         return torch.FloatTensor(enc).unsqueeze(0)
 
@@ -98,14 +109,15 @@ class BeamSearch:
         avoid_repeats=True
     ):
         """
-        Beam search for Rubik's Cube.
-        Returns (moves_list, solved_bool).
+        Perform beam search to solve Rubik's Cube.
+        Returns (list_of_moves, solved_bool).
         """
         s_list = self._to_state_list(start_state)
         root_cube = Cube(state=s_list)
         if root_cube.is_solved():
             return [], True
 
+        # Combined heuristic score: face center match + model value prediction
         def node_score(state_list):
             base = self._heuristic_by_centers(state_list)
             st = self._tensor_from_state_list(state_list)
@@ -115,7 +127,7 @@ class BeamSearch:
             return base + 50.0 * mv
 
         start_key = self._state_key_from_list(s_list)
-        beam = [(s_list, [], None, node_score(s_list))]
+        beam = [(s_list, [], None, node_score(s_list))]  # (state, path, last_move, score)
         seen = {start_key: 0}
 
         for depth in range(1, max_depth + 1):
@@ -131,11 +143,13 @@ class BeamSearch:
                         continue
                     move = moves[idx] if idx < len(moves) else idx
 
+                    # Skip immediate inverse move to avoid undoing last step
                     if prune_inverses and last_move is not None:
                         if isinstance(move, str) and self._inverse_move(move) == last_move:
                             continue
 
                     key = self._state_key_from_list(child)
+                    # Skip already visited states
                     if avoid_repeats and key in seen and seen[key] <= depth:
                         continue
 
@@ -149,9 +163,10 @@ class BeamSearch:
                         seen[key] = depth
 
             if not candidates:
-                return [], False
+                return [], False  # Dead-end
 
+            # Keep top beam_width candidates based on score
             candidates.sort(key=lambda x: x[3], reverse=True)
             beam = candidates[:beam_width]
 
-        return [], False
+        return [], False  # Max depth reached, not solved
