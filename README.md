@@ -62,7 +62,7 @@ uv sync
  
 # Achnoledgements
 - [SRA VJTI](http://sra.vjti.info/),  Eklavya 2025
-- Special thanks to our mentors, [Rakshitha](https://github.com/RakshithaKowlikar) and [Prithvi](https://github.com/rkt-1597).
+- Special thanks to our mentors, Ansh and Aakasha and entire TY Committee.
 
 
 
