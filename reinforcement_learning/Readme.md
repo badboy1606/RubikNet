@@ -155,19 +155,12 @@ This repository contains implementations of various reinforcement learning algor
 Each file can be run independently:
 
 ```bash
-python taxi.py          # Train and visualize taxi agent
-python blackjack.py     # Train blackjack agent and show win rate  
-python mountain_car.py  # Train mountain car agent with visualization
-python cartpole.py      # Train and visualize cartpole agent
+pip install uv # if not installled previously
+uv sync  # install required packages
+# for running a file
+uv run [filename].py
 ```
 
-## Requirements
-
-```
-gymnasium
-numpy
-matplotlib (for visualization in taxi.py and mountain_car.py)
-```
 
 ## Environment Difficulty Comparison
 
