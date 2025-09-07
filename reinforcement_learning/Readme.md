@@ -17,6 +17,10 @@ This repository contains implementations of various reinforcement learning algor
 
 **Description**: A taxi must pick up a passenger at one location and drop them off at another location in a 5x5 grid world.
 
+<p align="center">
+  <img src="assets/taxi.gif" alt="Taxi Simulation"/>
+</p>
+
 **State Space**: 
 - **Size**: 500 discrete states
 - **Components**: 
@@ -49,6 +53,10 @@ This repository contains implementations of various reinforcement learning algor
 
 **Description**: Classic card game where the goal is to get a hand value as close to 21 as possible without going over, while beating the dealer.
 
+<p align="center">
+  <img src="assets/blackjack.gif" alt="Blackjack game simulation"/>
+</p>
+
 **State Space**:
 - **Size**: Variable (represented as tuple)
 - **Components**:
@@ -76,6 +84,10 @@ This repository contains implementations of various reinforcement learning algor
 **Environment**: MountainCar-v0
 
 **Description**: A car must reach a goal position on top of a hill by building momentum and oscillating back and forth. The car starts in a valley and must use gravity to gain enough momentum to reach the flag at the top.
+
+<p align="center">
+  <img src="assets/mountain_car.gif" alt="Mountain Car Simulation"/>
+</p>
 
 **State Space**:
 - **Size**: 2 continuous variables (discretized to ~1000 bins)
@@ -105,6 +117,10 @@ This repository contains implementations of various reinforcement learning algor
 **Environment**: CartPole-v1
 
 **Description**: Balance a pole on a cart by applying forces to move the cart left or right. The episode ends when the pole falls over or the cart moves too far from center.
+
+<p align="center">
+  <img src="assets/cartpole.gif" alt="Cartpole Simulation"/>
+</p>
 
 **State Space**:
 - **Size**: 4 continuous variables (discretized to 10^4 = 10,000 states)
@@ -175,3 +191,4 @@ uv run [filename].py
 - Reinforcement Learning [https://youtu.be/to-lHJfK4pw?si=8LtSDwL_wdS_85Wv]
 - Introduction to Deep Reinforcement Learning (Deep RL) [https://youtu.be/zR11FLZ-O9M?si=rfe19d4MZ0HUbmxL]
 - DeepMind x UCL | Reinforcement Learning Course 2018 [https://youtube.com/playlist?list=PLqYmG7hTraZBKeNJ-JE_eyJHZ7XgBoAyb&si=Zb2GjkAXr8n7wfNL]
+
