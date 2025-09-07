@@ -1,6 +1,11 @@
 # RubikNet
 
 RubikNet is a project exploring how AI and robotics can solve the Rubik’s Cube using **Reinforcement Learning**, **Deep Learning**, and **Search-based Solvers**.  
+
+<p align="center">
+  <img src="assets/scrambling.gif" alt="Scrambling cube" width = "300"/>
+</p>
+
 This repository is organized into three main components:
 
 ---
@@ -31,10 +36,23 @@ This folder is designed as a **introduction** on deep learning.
 
 ## [Cube Solver](https://github.com/Archaive16/RubikNet/tree/main/cube_solver)
 This folder contains the **solver logic** for the Rubik’s Cube. 
-- Implemented **ADI(Autodidactic Iteration)** or Self Supervised Learning for cube solving.
-- Includes **Beam Search/ A-star -based solvers** and classical search approaches.  
-- Can be used standalone to find solutions to scrambled states.  
+1. Implemented **ADI(Autodidactic Iteration)** or Self Supervised Learning for cube solving.
+<p align="center">
+  <img src="assets/results.png" alt="Results" width = "500"/>
+</p>
+2. Includes ADI(Autodidactic Iteration) and classical search approaches.  
+<p align="center">
+  <img src="assets/avg_solve_time.png" alt="Average Solve time"width = "500"/>
+</p>
+<p align="center">
+  <img src="assets/solve_percent.png" alt="Solve percent"width = "500"/>
+</p>
+3. Can be used standalone to find solutions to scrambled states.  
+<p align="center">
+  <img src="assets/adi_performance_analysis.png" alt="ADI standalone"width = "500"/>
+</p>
 
+Check out the ReadMe of this folder to implement the whole solver.
 
 ---
 
@@ -60,11 +78,7 @@ uv sync
 #### Rigvedi Borchate  
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rigvedi-3301)  
  
-# Achnoledgements
+# Achnowledgements
 - [SRA VJTI](http://sra.vjti.info/),  Eklavya 2025
-- Special thanks to our mentors, Ansh and Aakasha and entire TY Committee.
+- Special thanks to our mentors, Ansh Semwal and Akash Kawle.
 
-
-
-
-  
