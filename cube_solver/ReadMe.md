@@ -213,7 +213,7 @@ All the used .stl files inclusing the customised files are included in this fold
 Your go-to shopping list with all the links to all the components required to save you the hassle of surfing through sites or market places.
 
 ### Uart
-C code for ESP32 that controls 6 stepper motors to physically manipulate a Rubik's cube based on serial commands.
+C code for ESP32 that controls 6 stepper motors to physically manipulate a Rubik's cube based on serial commands. Available in scripts.
 
 #### Motor Control
 - **`step_motor()`**: Controls individual stepper motors with step/direction pins
