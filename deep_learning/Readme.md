@@ -1,24 +1,40 @@
-# Deep Learning 🤖  
+# Deep learning
 
-## 🧠 What is Deep Learning?  
-Deep Learning is a subfield of **Machine Learning** inspired by how the human brain works.  
-It uses **Artificial Neural Networks (ANNs)** to learn patterns from data and make predictions.  
+This folder contains all the exercises that we did during the course
 
-Unlike traditional ML (which needs hand-crafted features), Deep Learning automatically learns **features + representations** from raw data (like images, audio, or text).  
+# Fashion-MNIST Dataset  
 
----
+## Overview  
+Fashion-MNIST is a dataset of **Zalando’s article images**, intended as a drop-in replacement for the classic MNIST dataset of handwritten digits. It is widely used for benchmarking machine learning algorithms in image classification.  
 
-## 🔑 Key Concepts  
+## Dataset Details  
+- **Type**: Grayscale images  
+- **Image size**: 28 × 28 pixels  
+- **Number of classes**: 10 (fashion categories)  
+- **Training set size**: 60,000 images  
+- **Test set size**: 10,000 images  
 
-- **Neuron** → The smallest unit of a neural network (like a biological brain cell).  
-- **Layer** → A collection of neurons stacked together.  
-- **Activation Function** → Introduces non-linearity (e.g., ReLU, Sigmoid).  
-- **Loss Function** → Measures the error between predictions and true values.  
-- **Backpropagation** → The algorithm that adjusts weights to minimize loss.  
-- **Epochs** → One full pass over the dataset during training.  
+## Classes  
+Each image belongs to one of the following categories:  
 
-👉 The network learns by adjusting its weights step by step using **Gradient Descent**(Process fo reducing the loss function).  
+0. T-shirt/top  
+1. Trouser  
+2. Pullover  
+3. Dress  
+4. Coat  
+5. Sandal  
+6. Shirt  
+7. Sneaker  
+8. Bag  
+9. Ankle boot  
 
----
+# Results
+
+We got roughly around 90-95 percent accuracy while classifying fashion objects
+
+<p align="center">
+  <img src="assets/image.png" alt="Sandal Prediction" width="700"/>
+</p>
+
 
 
