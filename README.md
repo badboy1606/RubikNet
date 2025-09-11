@@ -26,8 +26,7 @@ These experiments build the foundation for applying RL to more complex tasks lik
 ## [Deep Learning](https://github.com/Archaive16/RubikNet/tree/main/deep_learning)
 This folder is designed as a **introduction** on deep learning.  
 - Covers the basics of **neural networks** and how they learn.  
-- Hands-on projects on:  
-  - **Digit Recognition (MNIST)**  
+- Hands-on projects on:    
   - **Fashion Classification (Fashion-MNIST)**  
 - Helps build the foundation needed before moving on to Reinforcement Learning and Cube Solvers.  
 
