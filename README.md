@@ -10,8 +10,8 @@ This repository is organized into three main components:
 
 ---
 
-## [Reinforcement Learning](https://github.com/Archaive16/RubikNet/tree/main/reinforcement_learning)
-This folder contains our experiments with **RL agents** trained on classic control environments.  
+## [Reinforcement Learning (NeroGym Submodule)](https://github.com/badboy1606/NeroGym/tree/main/reinforcement_learning)
+This module is now maintained in the **NeroGym submodule** and contains our experiments with **RL agents** trained on classic control environments.  
 We have implemented and solved the following environments:  
 
 - **CartPole** – balancing a pole on a cart  
@@ -23,8 +23,8 @@ These experiments build the foundation for applying RL to more complex tasks lik
 
 ---
 
-## [Deep Learning](https://github.com/Archaive16/RubikNet/tree/main/deep_learning)
-This folder is designed as a **introduction** on deep learning.  
+## [Deep Learning (NeroGym Submodule)](https://github.com/badboy1606/NeroGym/tree/main/deep_learning)
+This module is now maintained in the **NeroGym submodule** and is designed as an **introduction** to deep learning.  
 - Covers the basics of **neural networks** and how they learn.  
 - Hands-on projects on:    
   - **Fashion Classification (Fashion-MNIST)**  
@@ -33,7 +33,7 @@ This folder is designed as a **introduction** on deep learning.
 
 ---
 
-## [Cube Solver](https://github.com/Archaive16/RubikNet/tree/main/cube_solver)
+## [Cube Solver](https://github.com/badboy1606/RubikNet/tree/main/cube_solver)
 This folder contains the **solver logic** for the Rubik’s Cube. 
 1. Implemented **ADI(Autodidactic Iteration)** or Self Supervised Learning for cube solving.
 <p align="center">
