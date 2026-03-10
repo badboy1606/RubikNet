@@ -1,0 +1,4 @@
+[submodule "neurogym"]
+	path = neurogym
+	url = https://github.com/badboy1606/NeuroGym.git
+	branch = main
